@@ -14,7 +14,8 @@ import androidx.compose.ui.Modifier
 fun MainAppScreen(
     onLogout: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenWorkoutHistory: () -> Unit
+    onOpenWorkoutHistory: () -> Unit,
+    onOpenEditProfile: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -64,7 +65,11 @@ fun MainAppScreen(
                 )
                 1 -> WorkoutScreen(onOpenHistory = onOpenWorkoutHistory)
                 2 -> ProgressScreen()
-                3 -> ProfileScreen(onLogout = onLogout, onOpenSettings = onOpenSettings)
+                3 -> ProfileScreen(
+                    onLogout = onLogout,
+                    onOpenSettings = onOpenSettings,
+                    onOpenEditProfile = onOpenEditProfile
+                )
             }
         }
     }

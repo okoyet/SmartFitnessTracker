@@ -1,9 +1,7 @@
 package week11.st991708650.smartfitnesstracker.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -103,50 +101,6 @@ fun LoginScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error
                 )
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                HorizontalDivider(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = "or",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.weight(1f))
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // Not wired to real Google auth yet - Google Sign-In needs an OAuth
-            // client configured in the Firebase console (and Credential Manager
-            // / Play Services setup) that isn't available in this environment.
-            OutlinedButton(
-                onClick = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "G",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Text("Continue with Google")
             }
         }
 

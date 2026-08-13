@@ -2,16 +2,52 @@ package week11.st991708650.smartfitnesstracker.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import week11.st991708650.smartfitnesstracker.data.model.DailyStats
+import week11.st991708650.smartfitnesstracker.data.model.UserProfile
 import week11.st991708650.smartfitnesstracker.data.model.Workout
 
 class FirestoreRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
+
+    // --------------------------------------------------
+    // USER PROFILE
+    // --------------------------------------------------
+
+    suspend fun saveUserProfile(profile: UserProfile): Result<Unit> {
+        return try {
+            firestore.collection("users")
+                .document(profile.userId)
+                .set(profile, SetOptions.merge())
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun getUserProfile(userId: String): Flow<UserProfile?> = callbackFlow {
+        val listener = firestore.collection("users")
+            .document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+
+                trySend(snapshot?.toObject(UserProfile::class.java))
+            }
+
+        awaitClose {
+            listener.remove()
+        }
+    }
 
     // --------------------------------------------------
     // DAILY STATS
@@ -131,6 +167,40 @@ class FirestoreRepository {
                 .document(workout.id)
                 .delete()
                 .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --------------------------------------------------
+    // ACCOUNT DELETION
+    // --------------------------------------------------
+
+    /**
+     * Deletes every document under users/{userId} - the workouts and
+     * daily_stats subcollections, then the user profile document itself.
+     * The Firestore client SDK has no recursive/bulk delete, so each
+     * subcollection is fetched and its documents removed one at a time.
+     * Must run while the user is still authenticated (security rules key
+     * off request.auth.uid == userId).
+     */
+    suspend fun deleteAllUserData(userId: String): Result<Unit> {
+        return try {
+            val userDoc = firestore.collection("users").document(userId)
+
+            val workouts = userDoc.collection("workouts").get().await()
+            for (document in workouts.documents) {
+                document.reference.delete().await()
+            }
+
+            val dailyStats = userDoc.collection("daily_stats").get().await()
+            for (document in dailyStats.documents) {
+                document.reference.delete().await()
+            }
+
+            userDoc.delete().await()
 
             Result.success(Unit)
         } catch (e: Exception) {

@@ -76,11 +76,7 @@ fun SplashScreen(
             Spacer(Modifier.height(40.dp))
 
             Button(
-                onClick = {
-                    navController.navigate(Screen.Register.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
-                    }
-                },
+                onClick = { navController.navigate(Screen.Register.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -91,11 +87,7 @@ fun SplashScreen(
             Spacer(Modifier.height(12.dp))
 
             OutlinedButton(
-                onClick = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
-                    }
-                },
+                onClick = { navController.navigate(Screen.Login.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

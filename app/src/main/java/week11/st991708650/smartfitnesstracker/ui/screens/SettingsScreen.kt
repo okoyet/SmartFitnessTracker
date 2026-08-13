@@ -13,26 +13,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
+import week11.st991708650.smartfitnesstracker.ui.components.PasswordTextField
 import week11.st991708650.smartfitnesstracker.viewmodel.AuthViewModel
 
-private const val APP_VERSION = "Version 2.4.1"
+private const val APP_VERSION = "Version 1.0.0"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onAccountDeleted: () -> Unit,
     darkModeEnabled: Boolean,
     onDarkModeChange: (Boolean) -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // Local-only, in-memory toggles - not wired to real Android notification
-    // channels/permissions and not persisted. Dark mode is the one real,
-    // working preference here (it actually drives the app theme).
-    var pushNotifications by remember { mutableStateOf(true) }
-    var workoutReminders by remember { mutableStateOf(true) }
-
     var resetEmailSent by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var reauthPassword by remember { mutableStateOf("") }
+
+    val deleteState by authViewModel.deleteAccountState.collectAsState()
+
+    LaunchedEffect(deleteState.success) {
+        if (deleteState.success) {
+            onAccountDeleted()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -54,22 +59,6 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             SectionLabel("PREFERENCES")
-
-            SettingsSwitchRow(
-                label = "Push notifications",
-                checked = pushNotifications,
-                onCheckedChange = { pushNotifications = it }
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            SettingsSwitchRow(
-                label = "Workout reminders",
-                checked = workoutReminders,
-                onCheckedChange = { workoutReminders = it }
-            )
-
-            Spacer(Modifier.height(8.dp))
 
             SettingsSwitchRow(
                 label = "Dark mode",
@@ -102,33 +91,33 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            // No privacy settings screen exists yet.
-            SettingsNavRow(label = "Privacy settings", onClick = {})
-
             Spacer(Modifier.height(24.dp))
 
-            SectionLabel("SUPPORT")
+            if (deleteState.loading) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Button(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete account")
+                }
+            }
 
-            // No about/rating destinations wired up yet.
-            SettingsNavRow(label = "About Smart Fitness Tracker", onClick = {})
+            deleteState.error?.let { error ->
+                Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(8.dp))
-
-            SettingsNavRow(label = "Rate the app", onClick = {})
-
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = { showDeleteDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.error
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
                 )
-            ) {
-                Text("Delete account")
             }
 
             Spacer(Modifier.height(16.dp))
@@ -148,26 +137,63 @@ fun SettingsScreen(
             title = { Text("Delete account?") },
             text = {
                 Text(
-                    "This will sign you out. Full account deletion isn't available yet - " +
-                        "contact support to permanently remove your data."
+                    "This permanently deletes your account and all your workout data. " +
+                        "This can't be undone."
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        // Real account + Firestore data deletion isn't implemented -
-                        // that needs re-authentication and a server-side cleanup step
-                        // (e.g. a Cloud Function) to remove the user's subcollections
-                        // safely. Signing out is the closest safe action for now.
-                        FirebaseAuth.getInstance().signOut()
+                        authViewModel.deleteAccount()
                     }
                 ) {
-                    Text("Sign out", color = MaterialTheme.colorScheme.error)
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Firebase requires a recent sign-in before it will delete an account.
+    // If deleteAccount() hits that wall, ask for the password and retry.
+    if (deleteState.needsReauth) {
+        AlertDialog(
+            onDismissRequest = { authViewModel.clearDeleteAccountState() },
+            title = { Text("Confirm your password") },
+            text = {
+                Column {
+                    Text("For your security, please re-enter your password to delete your account.")
+
+                    Spacer(Modifier.height(12.dp))
+
+                    PasswordTextField(
+                        password = reauthPassword,
+                        onPasswordChange = { reauthPassword = it }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        authViewModel.reauthenticateAndDelete(reauthPassword)
+                        reauthPassword = ""
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        reauthPassword = ""
+                        authViewModel.clearDeleteAccountState()
+                    }
+                ) {
                     Text("Cancel")
                 }
             }
@@ -185,6 +211,9 @@ private fun SectionLabel(text: String) {
     )
 }
 
+// Generic reusable row - only one call site right now (Dark mode) since the
+// other preference toggles were removed, but it's meant to take any label.
+@Suppress("SameParameterValue")
 @Composable
 private fun SettingsSwitchRow(
     label: String,
@@ -205,6 +234,8 @@ private fun SettingsSwitchRow(
     }
 }
 
+// Same story as SettingsSwitchRow above - generic, currently single-use.
+@Suppress("SameParameterValue")
 @Composable
 private fun SettingsNavRow(label: String, onClick: () -> Unit) {
     OutlinedCard(

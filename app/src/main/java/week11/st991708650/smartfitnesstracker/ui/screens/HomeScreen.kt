@@ -15,16 +15,27 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import week11.st991708650.smartfitnesstracker.ui.components.*
 import week11.st991708650.smartfitnesstracker.ui.theme.accentAmberColor
+import week11.st991708650.smartfitnesstracker.utils.DAILY_STEP_GOAL
 import week11.st991708650.smartfitnesstracker.utils.displayNameFor
+import week11.st991708650.smartfitnesstracker.viewmodel.FitnessViewModel
 import week11.st991708650.smartfitnesstracker.viewmodel.SensorViewModel
 
 @Composable
 fun HomeScreen(
     sensorViewModel: SensorViewModel = viewModel(),
+    fitnessViewModel: FitnessViewModel = viewModel(),
     onNavigateToWorkout: () -> Unit = {},
     onNavigateToProgress: () -> Unit = {},
     onNavigateToWorkoutHistory: () -> Unit = {}
 ) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+    LaunchedEffect(userId) {
+        userId?.let { fitnessViewModel.observeFitnessData(it) }
+    }
+
+    val fitnessState by fitnessViewModel.uiState.collectAsState()
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -50,7 +61,8 @@ fun HomeScreen(
     }
 
     val displayName = displayNameFor(FirebaseAuth.getInstance().currentUser)
-    val goalPercent = ((sensorData.steps / 10000f).coerceIn(0f, 1f) * 100).toInt()
+    val goalPercent = ((sensorData.steps / DAILY_STEP_GOAL.toFloat()).coerceIn(0f, 1f) * 100).toInt()
+    val recentWorkouts = fitnessState.workouts
 
     Column(
         modifier = Modifier
@@ -70,7 +82,7 @@ fun HomeScreen(
             StatCard(
                 label = "STEPS",
                 value = "%,d".format(sensorData.steps),
-                caption = "of 10,000",
+                caption = "of $DAILY_STEP_GOAL",
                 valueColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)
             )
@@ -93,7 +105,7 @@ fun HomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        WeeklyChart()
+        WeeklyActivityChart(workouts = recentWorkouts)
 
         Spacer(Modifier.height(24.dp))
 

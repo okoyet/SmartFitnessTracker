@@ -16,6 +16,8 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import week11.st991708650.smartfitnesstracker.data.model.Workout
 import week11.st991708650.smartfitnesstracker.viewmodel.FitnessViewModel
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private data class WorkoutCategory(
     val label: String,
@@ -42,17 +44,18 @@ fun WorkoutScreen(
     var isRunning by remember { mutableStateOf(false) }
     var elapsedSeconds by remember { mutableStateOf(0) }
     var showSavedBanner by remember { mutableStateOf(false) }
+    var weightLiftedInput by remember { mutableStateOf("") }
 
     LaunchedEffect(isRunning) {
         while (isRunning) {
-            delay(1000)
+            delay(1.seconds)
             elapsedSeconds++
         }
     }
 
     LaunchedEffect(showSavedBanner) {
         if (showSavedBanner) {
-            delay(2500)
+            delay(2500.milliseconds)
             showSavedBanner = false
         }
     }
@@ -109,6 +112,20 @@ fun WorkoutScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        if (selectedCategory.label == "Strength") {
+            TextField(
+                value = weightLiftedInput,
+                onValueChange = {
+                    if (it.length <= 4) weightLiftedInput = it.filter(Char::isDigit)
+                },
+                label = { Text("Weight lifted (kg)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
 
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -211,13 +228,16 @@ fun WorkoutScreen(
                                         userId = userId,
                                         type = selectedCategory.label,
                                         duration = elapsedSeconds / 60,
-                                        calories = calories
+                                        calories = calories,
+                                        distanceKm = distanceKm,
+                                        weightLiftedKg = weightLiftedInput.toDoubleOrNull() ?: 0.0
                                     )
                                 )
                             }
 
                             isRunning = false
                             elapsedSeconds = 0
+                            weightLiftedInput = ""
                             showSavedBanner = true
                         },
                         modifier = Modifier.fillMaxWidth()

@@ -7,5 +7,7 @@ data class Workout(
     val duration: Int = 0,
     val steps: Int = 0,
     val calories: Int = 0,
+    val distanceKm: Double = 0.0,
+    val weightLiftedKg: Double = 0.0,
     val timestamp: Long = System.currentTimeMillis()
 )

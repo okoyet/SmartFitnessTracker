@@ -6,9 +6,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import week11.st991708650.smartfitnesstracker.ui.components.PasswordTextField
@@ -135,25 +132,6 @@ fun RegisterScreen(
                     color = MaterialTheme.colorScheme.error
                 )
             }
-
-            Spacer(Modifier.height(16.dp))
-
-            // "Terms of Service" and "Privacy Policy" are styled as links but
-            // don't go anywhere yet - there's no legal content in the app.
-            Text(
-                text = buildAnnotatedString {
-                    append("By creating an account you agree to our ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("Terms of Service")
-                    }
-                    append(" and ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("Privacy Policy")
-                    }
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

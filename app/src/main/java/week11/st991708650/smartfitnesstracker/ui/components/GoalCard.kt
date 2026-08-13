@@ -8,11 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GoalCard(
-    goalPercent: Int,
-    activityLabel: String = "Cardio + Strength",
-    targetCaption: String = "45 min · 500 kcal target"
-) {
+fun GoalCard(goalPercent: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -23,22 +19,13 @@ fun GoalCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "TODAY'S GOAL",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Text(
-                        text = activityLabel,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
+                Text(
+                    text = "TODAY'S GOAL",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 Text(
                     text = "$goalPercent%",
@@ -47,19 +34,11 @@ fun GoalCard(
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             LinearProgressIndicator(
                 progress = { (goalPercent / 100f).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = targetCaption,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

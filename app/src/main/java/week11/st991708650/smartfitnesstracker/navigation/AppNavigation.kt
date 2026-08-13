@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
+import week11.st991708650.smartfitnesstracker.ui.screens.EditProfileScreen
 import week11.st991708650.smartfitnesstracker.ui.screens.ForgotPasswordScreen
 import week11.st991708650.smartfitnesstracker.ui.screens.LoginScreen
 import week11.st991708650.smartfitnesstracker.ui.screens.MainAppScreen
@@ -35,7 +36,7 @@ fun AppNavigation(
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 goRegister = {
@@ -51,7 +52,7 @@ fun AppNavigation(
             RegisterScreen(
                 onSuccess = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onBack = { navController.popBackStack() }
@@ -74,13 +75,25 @@ fun AppNavigation(
                     }
                 },
                 onOpenSettings = { navController.navigate(Screen.Settings.route) },
-                onOpenWorkoutHistory = { navController.navigate(Screen.WorkoutHistory.route) }
+                onOpenWorkoutHistory = { navController.navigate(Screen.WorkoutHistory.route) },
+                onOpenEditProfile = { navController.navigate(Screen.EditProfile.route) }
+            )
+        }
+
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
+                onAccountDeleted = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 darkModeEnabled = darkModeEnabled,
                 onDarkModeChange = onDarkModeChange
             )

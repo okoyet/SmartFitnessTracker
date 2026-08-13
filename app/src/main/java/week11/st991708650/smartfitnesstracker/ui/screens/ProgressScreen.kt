@@ -12,40 +12,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
+import week11.st991708650.smartfitnesstracker.data.model.Workout
+import week11.st991708650.smartfitnesstracker.ui.components.WeeklyActivityChart
 import week11.st991708650.smartfitnesstracker.ui.theme.accentAmberColor
+import week11.st991708650.smartfitnesstracker.utils.DAILY_STEP_GOAL
+import week11.st991708650.smartfitnesstracker.utils.calculateStreak
 import week11.st991708650.smartfitnesstracker.utils.getCurrentMonthYear
+import week11.st991708650.smartfitnesstracker.utils.heaviestLift
+import week11.st991708650.smartfitnesstracker.utils.longestRun
+import week11.st991708650.smartfitnesstracker.utils.monthlyCalories
 import week11.st991708650.smartfitnesstracker.viewmodel.FitnessViewModel
-
-private data class DayActivity(val label: String, val minutes: Int)
-private data class WeekCalories(val label: String, val kcal: Int)
-private data class PersonalRecord(val title: String, val value: String, val date: String)
-
-// Sample data: the app doesn't track per-day activity history, monthly calorie
-// aggregates, or personal records yet, so these three sections render
-// placeholder values to match the prototype's layout until that data exists.
-private val sampleWeeklyActivity = listOf(
-    DayActivity("M", 30),
-    DayActivity("T", 38),
-    DayActivity("W", 3),
-    DayActivity("T", 25),
-    DayActivity("F", 42),
-    DayActivity("S", 18),
-    DayActivity("S", 2)
-)
-
-private val sampleMonthlyCalories = listOf(
-    WeekCalories("W1", 2100),
-    WeekCalories("W2", 3400),
-    WeekCalories("W3", 2800),
-    WeekCalories("W4", 3100)
-)
-
-private val samplePersonalRecords = listOf(
-    PersonalRecord("Longest run", "12.4 km", "Jul 15"),
-    PersonalRecord("Heaviest lift", "95 kg", "Jul 22")
-)
-
-private const val SAMPLE_STREAK_DAYS = 12
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
@@ -60,8 +39,9 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
     }
 
     val stats = state.dailyStats
-    val goalPercent = (((stats?.steps ?: 0) / 10000f).coerceIn(0f, 1f) * 100).toInt()
-    val totalSessions = state.workouts.size
+    val workouts = state.workouts
+    val goalPercent = (((stats?.steps ?: 0) / DAILY_STEP_GOAL.toFloat()).coerceIn(0f, 1f) * 100).toInt()
+    val streak = calculateStreak(workouts)
 
     Column(
         modifier = Modifier
@@ -88,13 +68,13 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
                 label = "GOAL",
                 value = "$goalPercent%",
                 valueColor = MaterialTheme.colorScheme.primary,
-                caption = "Monthly"
+                caption = "Today"
             )
 
             StatTile(
                 modifier = Modifier.weight(1f),
                 label = "STREAK",
-                value = "$SAMPLE_STREAK_DAYS",
+                value = "${streak}d",
                 valueColor = accentAmberColor(),
                 caption = "days"
             )
@@ -102,7 +82,7 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
             StatTile(
                 modifier = Modifier.weight(1f),
                 label = "SESSIONS",
-                value = "$totalSessions",
+                value = "${workouts.size}",
                 valueColor = MaterialTheme.colorScheme.primary,
                 caption = "total"
             )
@@ -110,52 +90,11 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
 
         Spacer(Modifier.height(16.dp))
 
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Weekly Activity (min)",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                val maxMinutes = sampleWeeklyActivity.maxOf { it.minutes }.coerceAtLeast(1)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    sampleWeeklyActivity.forEach { day ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .height(96.dp)
-                                    .width(28.dp),
-                                contentAlignment = Alignment.BottomCenter
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height((96 * day.minutes / maxMinutes).dp.coerceAtLeast(4.dp))
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialTheme.shapes.extraSmall
-                                        )
-                                )
-                            }
-
-                            Spacer(Modifier.height(6.dp))
-
-                            Text(
-                                text = day.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        WeeklyActivityChart(
+            workouts = workouts,
+            title = "Weekly Activity (min)",
+            highlightToday = false
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -168,16 +107,17 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
 
                 Spacer(Modifier.height(16.dp))
 
-                val maxKcal = sampleMonthlyCalories.maxOf { it.kcal }.coerceAtLeast(1)
+                val monthly = monthlyCalories(workouts)
+                val maxKcal = monthly.maxOf { it.second }.coerceAtLeast(1)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    sampleMonthlyCalories.forEach { week ->
+                    monthly.forEach { (label, kcal) ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "%,d".format(week.kcal),
+                                text = "%,d".format(kcal),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -190,21 +130,23 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
                                     .width(48.dp),
                                 contentAlignment = Alignment.BottomCenter
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height((72 * week.kcal / maxKcal).dp.coerceAtLeast(4.dp))
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            shape = MaterialTheme.shapes.extraSmall
-                                        )
-                                )
+                                if (kcal > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height((72 * kcal / maxKcal).dp.coerceAtLeast(4.dp))
+                                            .background(
+                                                color = MaterialTheme.colorScheme.primaryContainer,
+                                                shape = MaterialTheme.shapes.extraSmall
+                                            )
+                                    )
+                                }
                             }
 
                             Spacer(Modifier.height(6.dp))
 
                             Text(
-                                text = week.label,
+                                text = label,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -225,41 +167,65 @@ fun ProgressScreen(viewModel: FitnessViewModel = viewModel()) {
 
                 Spacer(Modifier.height(12.dp))
 
-                samplePersonalRecords.forEachIndexed { index, record ->
-                    if (index > 0) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                    }
+                PersonalRecordRow(
+                    title = "Longest run",
+                    workout = longestRun(workouts),
+                    formatValue = { "%.1f km".format(it.distanceKm) }
+                )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = record.title,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = record.value,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            Text(
-                                text = record.date,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = accentAmberColor()
-                            )
-                        }
-                    }
-                }
+                PersonalRecordRow(
+                    title = "Heaviest lift",
+                    workout = heaviestLift(workouts),
+                    formatValue = { "%.0f kg".format(it.weightLiftedKg) }
+                )
             }
         }
 
         Spacer(Modifier.height(16.dp))
     }
+}
+
+@Composable
+private fun PersonalRecordRow(
+    title: String,
+    workout: Workout?,
+    formatValue: (Workout) -> String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = title, style = MaterialTheme.typography.bodyLarge)
+
+        if (workout == null) {
+            Text(
+                text = "No data yet",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = formatValue(workout),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = formatRecordDate(workout.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = accentAmberColor()
+                )
+            }
+        }
+    }
+}
+
+private fun formatRecordDate(timestampMillis: Long): String {
+    return SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMillis))
 }
 
 @Composable

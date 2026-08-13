@@ -16,30 +16,32 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import week11.st991708650.smartfitnesstracker.ui.theme.accentAmberColor
+import week11.st991708650.smartfitnesstracker.utils.calculateStreak
 import week11.st991708650.smartfitnesstracker.utils.displayNameFor
+import week11.st991708650.smartfitnesstracker.utils.formatAge
+import week11.st991708650.smartfitnesstracker.utils.formatHeight
+import week11.st991708650.smartfitnesstracker.utils.formatWeight
 import week11.st991708650.smartfitnesstracker.utils.initialsFor
 import week11.st991708650.smartfitnesstracker.viewmodel.FitnessViewModel
-
-// Placeholder body-metric and membership fields - there's no profile document
-// or editable-body-metrics feature in the data model yet, so these render as
-// static sample content matching the prototype until that's built.
-private const val SAMPLE_HEIGHT = "5'10\" · 178 cm"
-private const val SAMPLE_WEIGHT = "165 lbs · 75 kg"
-private const val SAMPLE_AGE = "28 years"
-private const val SAMPLE_GOAL = "Build Muscle & Endurance"
-private const val SAMPLE_STREAK_DAYS = 12
+import week11.st991708650.smartfitnesstracker.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
     onOpenSettings: () -> Unit,
-    viewModel: FitnessViewModel = viewModel()
+    onOpenEditProfile: () -> Unit,
+    fitnessViewModel: FitnessViewModel = viewModel(),
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
     val user = FirebaseAuth.getInstance().currentUser
-    val state by viewModel.uiState.collectAsState()
+    val state by fitnessViewModel.uiState.collectAsState()
+    val userProfile by profileViewModel.userProfile.collectAsState()
 
     LaunchedEffect(user?.uid) {
-        user?.uid?.let { viewModel.observeFitnessData(it) }
+        user?.uid?.let {
+            fitnessViewModel.observeFitnessData(it)
+            profileViewModel.observeUserProfile(it)
+        }
     }
 
     val displayName = displayNameFor(user)
@@ -47,6 +49,7 @@ fun ProfileScreen(
 
     val totalWorkouts = state.workouts.size
     val totalHours = state.workouts.sumOf { it.duration } / 60
+    val streak = calculateStreak(state.workouts)
 
     Column(
         modifier = Modifier
@@ -98,14 +101,6 @@ fun ProfileScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        // "Pro Member" is decorative - there's no membership
-                        // tier concept in the app yet.
-                        Text(
-                            text = "Pro Member",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
 
@@ -128,11 +123,9 @@ fun ProfileScreen(
                         valueColor = MaterialTheme.colorScheme.primary
                     )
 
-                    // Streak isn't tracked yet - same placeholder as the
-                    // Progress tab's streak tile.
                     ProfileStat(
                         modifier = Modifier.weight(1f),
-                        value = "${SAMPLE_STREAK_DAYS}d",
+                        value = "${streak}d",
                         label = "Streak",
                         valueColor = accentAmberColor()
                     )
@@ -144,22 +137,23 @@ fun ProfileScreen(
 
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             Column {
-                ProfileInfoRow(label = "Height", value = SAMPLE_HEIGHT)
+                ProfileInfoRow(label = "Height", value = formatHeight(userProfile.heightCm))
                 HorizontalDivider()
-                ProfileInfoRow(label = "Weight", value = SAMPLE_WEIGHT)
+                ProfileInfoRow(label = "Weight", value = formatWeight(userProfile.weightKg))
                 HorizontalDivider()
-                ProfileInfoRow(label = "Age", value = SAMPLE_AGE)
+                ProfileInfoRow(label = "Age", value = formatAge(userProfile.age))
                 HorizontalDivider()
-                ProfileInfoRow(label = "Goal", value = SAMPLE_GOAL)
+                ProfileInfoRow(
+                    label = "Goal",
+                    value = userProfile.goal.ifBlank { "Not set" }
+                )
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // Edit profile has no destination yet - there's no editable body-metrics
-        // form or profile document to write to.
         OutlinedButton(
-            onClick = {},
+            onClick = onOpenEditProfile,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Edit profile")
