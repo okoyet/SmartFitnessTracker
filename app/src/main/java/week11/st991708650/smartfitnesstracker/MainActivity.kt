@@ -16,8 +16,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            // Manual dark-mode override from the Settings screen. Not persisted
-            // across app restarts (no DataStore/SharedPreferences wired up yet).
+
             var darkModeEnabled by rememberSaveable { mutableStateOf(false) }
 
             SmartFitnessTrackerTheme(darkTheme = darkModeEnabled) {

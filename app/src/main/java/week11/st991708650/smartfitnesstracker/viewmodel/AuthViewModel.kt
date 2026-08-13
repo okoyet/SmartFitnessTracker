@@ -128,13 +128,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Permanently deletes the signed-in user's Firestore data (workouts,
-     * daily_stats, and the user profile document) and their Firebase Auth
-     * account. If Firebase requires a recent login for this sensitive
-     * operation, [deleteAccountState] flips to `needsReauth = true` - call
-     * [reauthenticateAndDelete] with the user's password to retry.
-     */
+
     fun deleteAccount() {
         val user = auth.currentUser
         if (user == null) {

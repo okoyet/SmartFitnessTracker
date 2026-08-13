@@ -76,8 +76,7 @@ fun WorkoutHistoryScreen(
 
                 Spacer(Modifier.width(8.dp))
 
-                // Filter icon is decorative for now - there's no filter criteria
-                // (date range, workout type, etc.) wired up behind it yet.
+
                 FilledTonalIconButton(onClick = {}) {
                     Icon(Icons.Default.FilterList, contentDescription = "Filter")
                 }

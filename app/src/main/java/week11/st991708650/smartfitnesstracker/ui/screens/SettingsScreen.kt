@@ -159,8 +159,6 @@ fun SettingsScreen(
         )
     }
 
-    // Firebase requires a recent sign-in before it will delete an account.
-    // If deleteAccount() hits that wall, ask for the password and retry.
     if (deleteState.needsReauth) {
         AlertDialog(
             onDismissRequest = { authViewModel.clearDeleteAccountState() },
@@ -211,8 +209,7 @@ private fun SectionLabel(text: String) {
     )
 }
 
-// Generic reusable row - only one call site right now (Dark mode) since the
-// other preference toggles were removed, but it's meant to take any label.
+
 @Suppress("SameParameterValue")
 @Composable
 private fun SettingsSwitchRow(

@@ -2,7 +2,7 @@ package week11.st991708650.smartfitnesstracker.utils
 
 import kotlin.math.roundToInt
 
-/** "5'10\" · 178 cm" style, or "Not set" if height hasn't been entered. */
+
 fun formatHeight(heightCm: Int): String {
     if (heightCm <= 0) return "Not set"
 
@@ -13,7 +13,7 @@ fun formatHeight(heightCm: Int): String {
     return "$feet'$inches\" · $heightCm cm"
 }
 
-/** "165 lbs · 75 kg" style, or "Not set" if weight hasn't been entered. */
+
 fun formatWeight(weightKg: Int): String {
     if (weightKg <= 0) return "Not set"
 

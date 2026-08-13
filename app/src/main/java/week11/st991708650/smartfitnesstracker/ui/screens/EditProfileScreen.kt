@@ -39,8 +39,6 @@ fun EditProfileScreen(
     var goal by remember { mutableStateOf("") }
     var fieldsPrefilled by remember { mutableStateOf(false) }
 
-    // Prefill the numeric/goal fields once the saved profile loads, without
-    // overwriting whatever the user has already typed on later emissions.
     LaunchedEffect(profile) {
         if (!fieldsPrefilled) {
             heightCm = if (profile.heightCm > 0) profile.heightCm.toString() else ""

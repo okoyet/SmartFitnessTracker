@@ -178,14 +178,7 @@ class FirestoreRepository {
     // ACCOUNT DELETION
     // --------------------------------------------------
 
-    /**
-     * Deletes every document under users/{userId} - the workouts and
-     * daily_stats subcollections, then the user profile document itself.
-     * The Firestore client SDK has no recursive/bulk delete, so each
-     * subcollection is fetched and its documents removed one at a time.
-     * Must run while the user is still authenticated (security rules key
-     * off request.auth.uid == userId).
-     */
+
     suspend fun deleteAllUserData(userId: String): Result<Unit> {
         return try {
             val userDoc = firestore.collection("users").document(userId)

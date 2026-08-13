@@ -6,10 +6,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// MD3 type scale for the Figma prototype v2: Roboto throughout, weights capped
-// to Light(300)/Normal(400)/Medium(500) - no heavy weights anywhere. Display
-// and headline styles (used for big stat numbers) use weight 300 for that
-// light MD3 look; body copy uses 400; titles and labels use 500.
 
 private val displayWeight = FontWeight.Light
 private val headlineWeight = FontWeight.Light
